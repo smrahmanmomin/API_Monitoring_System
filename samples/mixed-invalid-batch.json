@@ -1,0 +1,9 @@
+[
+  { "api_name": "PatientDataAPI", "response_time_ms": 900, "status_code": 200, "records_returned": 42 },
+  { "api_name": "", "response_time_ms": 100, "status_code": 200, "records_returned": 1 },
+  { "api_name": "PharmacyAPI", "response_time_ms": -5, "status_code": 200, "records_returned": 3 },
+  { "api_name": "PharmacyAPI", "response_time_ms": 700, "status_code": 999, "records_returned": 3 },
+  { "api_name": "PrescriptionAPI", "response_time_ms": 650, "status_code": 429, "records_returned": null },
+  { "api_name": "ProviderDirectoryAPI", "response_time_ms": 300, "status_code": 401, "records_returned": -1 },
+  { "api_name": "PatientDataAPI", "response_time_ms": 100, "status_code": 200, "records_returned": 5, "patient_ssn": "not-allowed" }
+]
