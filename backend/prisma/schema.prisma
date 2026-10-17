@@ -1,0 +1,124 @@
+// Prisma schema for the API Monitoring & Alert System.
+// ApiCheck rows are retained for every ingested event (anomalous or not);
+// Alert rows group repeated detections of the same anomaly per API.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CheckSource {
+  API
+  FILE
+  DEMO
+}
+
+enum AnomalyType {
+  HIGH_LATENCY
+  SERVER_ERROR
+  RATE_LIMITED
+  AUTH_FAILURE
+  CLIENT_ERROR
+  UNEXPECTED_STATUS
+  MISSING_RECORD_COUNT
+  INVALID_RECORD_COUNT
+  ZERO_RECORDS
+  LOW_RECORD_COUNT
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum GenerationSource {
+  AI
+  FALLBACK
+}
+
+model ApiCheck {
+  id                 String      @id @default(uuid()) @db.Uuid
+  apiName            String      @map("api_name") @db.VarChar(100)
+  responseTimeMs     Int         @map("response_time_ms")
+  statusCode         Int         @map("status_code")
+  /// Null when the event did not report a usable record count.
+  recordsReturned    Int?        @map("records_returned")
+  /// Raw record-count problem (e.g. "missing", "negative", "non_integer"); null when valid.
+  recordsIssue       String?     @map("records_issue") @db.VarChar(32)
+  expectedMinRecords Int?        @map("expected_min_records")
+  checkedAt          DateTime    @map("checked_at") @db.Timestamptz(3)
+  anomalyCount       Int         @default(0) @map("anomaly_count")
+  source             CheckSource @default(API)
+  createdAt          DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  occurrences  AlertOccurrence[]
+  latestAlerts Alert[]           @relation("AlertLatestCheck")
+
+  @@index([apiName, checkedAt(sort: Desc)])
+  @@index([checkedAt(sort: Desc)])
+  @@map("api_checks")
+}
+
+model Alert {
+  id                 String           @id @default(uuid()) @db.Uuid
+  /// Grouping key: "<apiName>:<anomalyType>". Unique among non-resolved alerts (partial index in migration).
+  fingerprint        String           @db.VarChar(160)
+  apiName            String           @map("api_name") @db.VarChar(100)
+  anomalyType        AnomalyType      @map("anomaly_type")
+  severity           Severity
+  /// Severity assigned by the rule engine before any repeat-occurrence escalation.
+  baseSeverity       Severity         @map("base_severity")
+  status             AlertStatus      @default(ACTIVE)
+  /// Structured, deterministic evidence from the most recent detection.
+  evidence           Json
+  title              String           @db.VarChar(200)
+  summary            String
+  possibleCauses     Json             @map("possible_causes")
+  recommendedActions Json             @map("recommended_actions")
+  generationSource   GenerationSource @default(FALLBACK) @map("generation_source")
+  aiModel            String?          @map("ai_model") @db.VarChar(120)
+  promptVersion      String?          @map("prompt_version") @db.VarChar(40)
+  generatedAt        DateTime?        @map("generated_at") @db.Timestamptz(3)
+  occurrenceCount    Int              @default(1) @map("occurrence_count")
+  firstSeenAt        DateTime         @map("first_seen_at") @db.Timestamptz(3)
+  lastSeenAt         DateTime         @map("last_seen_at") @db.Timestamptz(3)
+  acknowledgedAt     DateTime?        @map("acknowledged_at") @db.Timestamptz(3)
+  resolvedAt         DateTime?        @map("resolved_at") @db.Timestamptz(3)
+  latestCheckId      String?          @map("latest_check_id") @db.Uuid
+  latestCheck        ApiCheck?        @relation("AlertLatestCheck", fields: [latestCheckId], references: [id], onDelete: SetNull)
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  occurrences AlertOccurrence[]
+
+  @@index([status, severity])
+  @@index([apiName])
+  @@index([lastSeenAt(sort: Desc)])
+  @@index([fingerprint])
+  @@map("alerts")
+}
+
+model AlertOccurrence {
+  id         String   @id @default(uuid()) @db.Uuid
+  alertId    String   @map("alert_id") @db.Uuid
+  checkId    String   @map("check_id") @db.Uuid
+  alert      Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  check      ApiCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+  detectedAt DateTime @map("detected_at") @db.Timestamptz(3)
+
+  @@unique([alertId, checkId])
+  @@index([checkId])
+  @@map("alert_occurrences")
+}
