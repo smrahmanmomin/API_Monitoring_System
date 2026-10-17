@@ -1,0 +1,33 @@
+{
+  "name": "api-monitoring-alert-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Intelligent API Monitoring & AI-Powered Alert System",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "dev:backend": "npm run dev -w backend",
+    "dev:frontend": "npm run dev -w frontend",
+    "build": "npm run build -w backend && npm run build -w frontend",
+    "test": "npm run test -w backend && npm run test -w frontend",
+    "typecheck": "npm run typecheck -w backend && npm run typecheck -w frontend",
+    "db:migrate": "npm run db:migrate -w backend",
+    "db:deploy": "npm run db:deploy -w backend",
+    "db:seed": "npm run db:seed -w backend",
+    "db:clear": "npm run db:clear -w backend",
+    "db:reset": "npm run db:reset -w backend",
+    "ingest:file": "npm run ingest:file -w backend --",
+    "docs:prompts": "tsx scripts/generate-ai-prompts-docx.ts"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "docx": "^9.5.1",
+    "tsx": "^4.23.15"
+  }
+}

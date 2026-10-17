@@ -1,0 +1,53 @@
+{
+  "name": "@apimonitor/backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
+    "build": "prisma generate && tsc -p tsconfig.build.json",
+    "start": "node --env-file-if-exists=.env dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:llm": "vitest run --config vitest.llm.config.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:reset": "prisma migrate reset",
+    "db:seed": "tsx --env-file-if-exists=.env prisma/seed.ts",
+    "db:clear": "tsx --env-file-if-exists=.env prisma/seed.ts --empty",
+    "ingest:file": "tsx --env-file-if-exists=.env src/cli/ingestFile.ts",
+    "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "tsx --env-file-if-exists=.env prisma/seed.ts"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.20.5",
+    "@types/nodemailer": "^8.0.2",
+    "@types/supertest": "^7.2.1",
+    "pino-pretty": "^13.2.0",
+    "prisma": "^6.19.3",
+    "supertest": "^7.3.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "nodemailer": "^10.1.2",
+    "openai": "^6.49.0",
+    "pino": "^9.14.0",
+    "pino-http": "^10.5.0",
+    "zod": "^3.25.76"
+  }
+}

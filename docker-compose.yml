@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: apimonitor-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: apimonitor
+      POSTGRES_PASSWORD: apimonitor_dev_password
+      POSTGRES_DB: apimonitor
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apimonitor -d apimonitor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Local SMTP catcher for the optional e-mail alert feature.
+  # SMTP on 1025, web inbox on http://localhost:8025 — no mail leaves your machine.
+  mailpit:
+    image: axllent/mailpit:v1.27
+    container_name: apimonitor-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  pgdata:
